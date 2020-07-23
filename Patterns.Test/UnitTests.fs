@@ -159,11 +159,11 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                  |[] -> None
 
                                     |ZeroOrMore a ->let rec aResult pat resList count =
-                                                            let ptm = patternMatch pat resList
-                                                            let ptmLen = match ptm with 
+                                                            let patMatch = patternMatch pat resList
+                                                            let ptmLen = match patMatch with 
                                                                             |Some(v) -> List.length v
                                                                             |None -> 0
-                                                            match ptm with
+                                                            match patMatch with
                                                             |None -> Some(count)
                                                             |Some(v) -> match List.isEmpty v with
                                                                         |true -> Some(count)
@@ -176,7 +176,9 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                         |Some(v) -> Some(List.take v lst)
                                                         |None -> Some(lst)*)
 
-                                     |OneOrMore a -> let rec aResult pat resList count =
+                                     |OneOrMore a -> match (patternMatch (ZeroOrMore a) lst) with
+                                                     |Some(v) when (List.length v)>0 ->Some(v)
+                                                     |_ -> None(*let rec aResult pat resList count =
                                                             let ptm = patternMatch pat resList
                                                             let ptmLen = match ptm with 
                                                                             |Some(v) -> List.length v
@@ -188,7 +190,7 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                                         |false -> aResult pat (List.skip (List.length v) resList) (count + (List.length v))
                                                      match (aResult a lst 0) with 
                                                      |Some(v) when v>0 ->Some(List.truncate (v) lst)
-                                                     |_ -> None                                   
+                                                     |_ -> None                                   *)
                                     (*|OneOrMore a -> match (orMore lst a) with
                                                     |None -> match lst with
                                                                 |h::t -> Some(lst)
@@ -199,13 +201,13 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                                     |_ -> Some(List.take v lst)*)
                                     |Exactly (n , a ) -> 
                                                           let rec aResult pat resList count (num:int) =
-                                                                let ptm = patternMatch pat resList
-                                                                let ptmLen = match ptm with 
+                                                                let patMatch = patternMatch pat resList
+                                                                let ptmLen = match patMatch with 
                                                                                 |Some(v) -> List.length v
                                                                                 |None -> 0
                                                                 match num = n with 
                                                                 |true -> Some(List.truncate count lst)
-                                                                |false -> match ptm with
+                                                                |false -> match patMatch with
                                                                             |None -> None
                                                                             |Some(v) -> match List.isEmpty v with
                                                                                         |true -> None
@@ -225,7 +227,12 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                                         |true -> Some(List.truncate n lst)                          //old
                                                                         |false -> None*)
                                                         
-                                    |FewerThan (n , a) -> match n=0 with 
+                                    |FewerThan (n , a) -> match n <=0 with 
+                                                            |true -> None
+                                                            |false -> match patternMatch (ZeroOrMore a) lst with
+                                                                        |Some(v) -> Some(List.truncate (n-1) v)
+                                                                        |_ -> Some([])
+                                    (*match n=0 with 
                                                             |true -> None
                                                             |false -> let rec aResult pat resList count (num:int) =
                                                                         let ptm = patternMatch pat resList
@@ -241,7 +248,7 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                                                                 |false -> aResult pat (List.skip (List.length v) resList) (count + (List.length v)) (num + 1)
                                                                       match (aResult a lst 0 0) with 
                                                                       |Some(v) -> Some(List.truncate (v) lst)
-                                                                      |None -> Some([])
+                                                                      |None -> Some([])*)
                                                             (*match (n <= 0) with 
                                                             |true -> None
                                                             |false -> match (orMore lst a) with
@@ -293,6 +300,7 @@ let rec patternMatch pattern cellList  :Cell list option=
                                                                                 |(pHead::pTail , []) -> match pHead with 
                                                                                                         |EndOfCells -> acc
                                                                                                         |FewerThan -> acc
+                                                                                                        |ZeroOrMore -> acc
                                                                                                         |_ -> checkHeads [] [] 0 false
                                                                                                         
 
